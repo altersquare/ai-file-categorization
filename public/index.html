@@ -1,0 +1,239 @@
+<!-- index.html - Simple frontend for the file categorization application -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI File Categorization</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      .container {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .upload-form {
+        margin: 20px 0;
+        text-align: center;
+      }
+      .file-input {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+      }
+      .submit-btn {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .submit-btn:hover {
+        background-color: #45a049;
+      }
+      .loading {
+        display: none;
+        text-align: center;
+        margin: 20px 0;
+      }
+      .results {
+        display: none;
+        margin-top: 20px;
+      }
+      .category {
+        margin-bottom: 15px;
+        background-color: #fff;
+        border-radius: 4px;
+        padding: 15px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .category-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #2c3e50;
+      }
+      .file-list {
+        list-style-type: none;
+        padding-left: 0;
+      }
+      .file-list li {
+        padding: 5px 0;
+        border-bottom: 1px solid #eee;
+      }
+      .error {
+        color: #e74c3c;
+        text-align: center;
+        margin: 20px 0;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>AI File Categorization</h1>
+
+      <div class="upload-form">
+        <h2>Upload a ZIP file to categorize its contents</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+          <input
+            type="file"
+            id="zipFile"
+            name="zipFile"
+            accept=".zip"
+            class="file-input"
+            required
+          />
+          <button type="submit" class="submit-btn">Upload & Categorize</button>
+        </form>
+      </div>
+
+      <div id="loading" class="loading">
+        <p>Processing your files... This may take a moment.</p>
+        <div class="spinner"></div>
+      </div>
+
+      <div id="error" class="error"></div>
+
+      <div id="results" class="results">
+        <h2>Categorization Results</h2>
+        <div id="categories"></div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const uploadForm = document.getElementById("uploadForm");
+        const loadingDiv = document.getElementById("loading");
+        const resultsDiv = document.getElementById("results");
+        const categoriesDiv = document.getElementById("categories");
+        const errorDiv = document.getElementById("error");
+
+        uploadForm.addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const formData = new FormData(uploadForm);
+          const fileInput = document.getElementById("zipFile");
+
+          if (!fileInput.files[0]) {
+            showError("Please select a ZIP file to upload");
+            return;
+          }
+
+          if (
+            fileInput.files[0].type !== "application/zip" &&
+            !fileInput.files[0].name.endsWith(".zip")
+          ) {
+            showError("Please upload a valid ZIP file");
+            return;
+          }
+
+          // Show loading indicator
+          loadingDiv.style.display = "block";
+          resultsDiv.style.display = "none";
+          errorDiv.style.display = "none";
+
+          try {
+            const response = await fetch("/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || "Error uploading file");
+            }
+
+            const data = await response.json();
+            console.log("Upload response:", data);
+
+            if (data.success) {
+              await fetchResults(data.sessionId);
+            } else {
+              throw new Error(data.message || "Unknown error occurred");
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            showError(error.message || "An unexpected error occurred");
+          } finally {
+            loadingDiv.style.display = "none";
+          }
+        });
+
+        async function fetchResults(sessionId) {
+          try {
+            const response = await fetch(`/results/${sessionId}`);
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || "Error fetching results");
+            }
+
+            const data = await response.json();
+            displayResults(data);
+          } catch (error) {
+            console.error("Error fetching results:", error);
+            showError(
+              error.message || "Failed to retrieve categorization results"
+            );
+          }
+        }
+
+        function displayResults(categories) {
+          categoriesDiv.innerHTML = "";
+
+          if (Object.keys(categories).length === 0) {
+            categoriesDiv.innerHTML = "<p>No categorized files found.</p>";
+          } else {
+            for (const category in categories) {
+              const files = categories[category];
+
+              const categoryDiv = document.createElement("div");
+              categoryDiv.className = "category";
+
+              const categoryTitle = document.createElement("div");
+              categoryTitle.className = "category-title";
+              categoryTitle.textContent = category + ` (${files.length} files)`;
+              categoryDiv.appendChild(categoryTitle);
+
+              const fileList = document.createElement("ul");
+              fileList.className = "file-list";
+
+              files.forEach((file) => {
+                const fileItem = document.createElement("li");
+                fileItem.textContent = file;
+                fileList.appendChild(fileItem);
+              });
+
+              categoryDiv.appendChild(fileList);
+              categoriesDiv.appendChild(categoryDiv);
+            }
+          }
+
+          resultsDiv.style.display = "block";
+        }
+
+        function showError(message) {
+          errorDiv.textContent = message;
+          errorDiv.style.display = "block";
+          loadingDiv.style.display = "none";
+        }
+      });
+    </script>
+  </body>
+</html>
