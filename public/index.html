@@ -1,239 +1,1162 @@
-<!-- index.html - Simple frontend for the file categorization application -->
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI File Categorization</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-        line-height: 1.6;
-      }
-      h1 {
-        color: #333;
-        text-align: center;
-      }
-      .container {
-        background-color: #f9f9f9;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-      .upload-form {
-        margin: 20px 0;
-        text-align: center;
-      }
-      .file-input {
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 8px;
-        width: 100%;
-        box-sizing: border-box;
-        margin-bottom: 10px;
-      }
-      .submit-btn {
-        background-color: #4caf50;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-      }
-      .submit-btn:hover {
-        background-color: #45a049;
-      }
-      .loading {
-        display: none;
-        text-align: center;
-        margin: 20px 0;
-      }
-      .results {
-        display: none;
-        margin-top: 20px;
-      }
-      .category {
-        margin-bottom: 15px;
-        background-color: #fff;
-        border-radius: 4px;
-        padding: 15px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      }
-      .category-title {
-        font-weight: bold;
-        margin-bottom: 10px;
-        color: #2c3e50;
-      }
-      .file-list {
-        list-style-type: none;
-        padding-left: 0;
-      }
-      .file-list li {
-        padding: 5px 0;
-        border-bottom: 1px solid #eee;
-      }
-      .error {
-        color: #e74c3c;
-        text-align: center;
-        margin: 20px 0;
-        display: none;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1>AI File Categorization</h1>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AI File Categorization | AlterSquare</title>
+        <link rel="icon" href="https://fav.farm/🗂️" /> <!-- Online favicon -->
+        <style>
+            :root {
+                --primary: #4361ee;
+                --primary-dark: #3a56d4;
+                --secondary: #4895ef;
+                --accent: #560bad;
+                --light: #f8f9fa;
+                --dark: #212529;
+                --gray-100: #f8f9fa;
+                --gray-200: #e9ecef;
+                --gray-300: #dee2e6;
+                --gray-400: #ced4da;
+                --gray-500: #adb5bd;
+                --gray-600: #6c757d;
+                --gray-700: #495057;
+                --gray-800: #343a40;
+                --success: #38b000;
+                --error: #d90429;
+                --border-radius: 12px;
+                --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+                --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+                --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+                --transition: all 0.3s ease;
+            }
 
-      <div class="upload-form">
-        <h2>Upload a ZIP file to categorize its contents</h2>
-        <form id="uploadForm" enctype="multipart/form-data">
-          <input
-            type="file"
-            id="zipFile"
-            name="zipFile"
-            accept=".zip"
-            class="file-input"
-            required
-          />
-          <button type="submit" class="submit-btn">Upload & Categorize</button>
-        </form>
-      </div>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
 
-      <div id="loading" class="loading">
-        <p>Processing your files... This may take a moment.</p>
-        <div class="spinner"></div>
-      </div>
+            body {
+                font-family: "Segoe UI", -apple-system, BlinkMacSystemFont,
+                    system-ui, sans-serif;
+                background-color: var(--gray-100);
+                color: var(--gray-800);
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
 
-      <div id="error" class="error"></div>
+            /* Header Styles */
+            .header {
+                background-color: white;
+                padding: 1rem 2rem;
+                box-shadow: var(--shadow-sm);
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                display: flex;
+                align-items: center;
+                gap: 1.5rem;
+            }
 
-      <div id="results" class="results">
-        <h2>Categorization Results</h2>
-        <div id="categories"></div>
-      </div>
-    </div>
+            .logo-container {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
 
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const uploadForm = document.getElementById("uploadForm");
-        const loadingDiv = document.getElementById("loading");
-        const resultsDiv = document.getElementById("results");
-        const categoriesDiv = document.getElementById("categories");
-        const errorDiv = document.getElementById("error");
+            .logo {
+                height: 40px;
+                width: auto;
+            }
 
-        uploadForm.addEventListener("submit", async function (e) {
-          e.preventDefault();
+            .brand-name {
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: var(--gray-800);
+            }
 
-          const formData = new FormData(uploadForm);
-          const fileInput = document.getElementById("zipFile");
+            .app-title {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: var(--primary);
+                margin-left: auto;
+            }
 
-          if (!fileInput.files[0]) {
-            showError("Please select a ZIP file to upload");
-            return;
-          }
+            /* Main Content */
+            .main-content {
+                flex: 1;
+                display: flex;
+                padding: 2rem;
+                gap: 2rem;
+                max-width: 1400px;
+                margin: 0 auto;
+                width: 100%;
+            }
 
-          if (
-            fileInput.files[0].type !== "application/zip" &&
-            !fileInput.files[0].name.endsWith(".zip")
-          ) {
-            showError("Please upload a valid ZIP file");
-            return;
-          }
+            /* Cards */
+            .card {
+                background-color: white;
+                border-radius: var(--border-radius);
+                box-shadow: var(--shadow-md);
+                padding: 2rem;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
 
-          // Show loading indicator
-          loadingDiv.style.display = "block";
-          resultsDiv.style.display = "none";
-          errorDiv.style.display = "none";
+            /* Info Section */
+            .info-section {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
 
-          try {
-            const response = await fetch("/upload", {
-              method: "POST",
-              body: formData,
+            .info-icon {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                color: var(--primary);
+            }
+
+            .info-icon svg {
+                width: 24px;
+                height: 24px;
+                flex-shrink: 0;
+            }
+
+            .section-title {
+                font-size: 1.4rem;
+                font-weight: 600;
+                color: var(--gray-800);
+                margin-bottom: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .restriction-list {
+                list-style: none;
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem;
+            }
+
+            .restriction-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding-bottom: 1.25rem;
+                border-bottom: 1px solid var(--gray-200);
+            }
+
+            .restriction-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            .restriction-icon {
+                background-color: var(--gray-100);
+                border-radius: 50%;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .restriction-icon svg {
+                width: 20px;
+                height: 20px;
+                color: var(--primary);
+            }
+
+            .restriction-text {
+                font-size: 1rem;
+                color: var(--gray-700);
+                line-height: 1.5;
+            }
+
+            .restriction-text strong {
+                color: var(--accent);
+                font-weight: 600;
+            }
+
+            /* Upload Section */
+            .upload-section {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .upload-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 1.5rem;
+                padding: 2rem;
+                border: 2px dashed var(--gray-300);
+                border-radius: var(--border-radius);
+                background-color: var(--gray-100);
+                transition: var(--transition);
+                cursor: pointer;
+            }
+
+            .upload-container:hover {
+                border-color: var(--primary);
+                background-color: rgba(67, 97, 238, 0.05);
+            }
+
+            .upload-icon {
+                width: 64px;
+                height: 64px;
+                color: var(--primary);
+            }
+
+            .upload-title {
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: var(--gray-800);
+                text-align: center;
+            }
+
+            .upload-subtitle {
+                font-size: 0.95rem;
+                color: var(--gray-600);
+                text-align: center;
+            }
+
+            .file-input {
+                display: none;
+            }
+
+            .selected-file {
+                display: none;
+                background-color: var(--gray-100);
+                padding: 1rem;
+                border-radius: var(--border-radius);
+                width: 100%;
+            }
+
+            .file-info {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .file-icon {
+                color: var(--primary);
+                width: 24px;
+                height: 24px;
+            }
+
+            .file-name {
+                font-size: 0.95rem;
+                font-weight: 500;
+                color: var(--gray-800);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .file-size {
+                font-size: 0.85rem;
+                color: var(--gray-600);
+                margin-left: auto;
+            }
+
+            .submit-btn {
+                background-color: var(--primary);
+                color: white;
+                border: none;
+                padding: 0.875rem 1.5rem;
+                border-radius: var(--border-radius);
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: var(--transition);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            .submit-btn:hover {
+                background-color: var(--primary-dark);
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-md);
+            }
+
+            .submit-btn:active {
+                transform: translateY(0);
+            }
+
+            .submit-btn svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            /* Loading State */
+            .loading {
+                display: none;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 1.5rem;
+                padding: 2rem;
+            }
+
+            .spinner {
+                width: 48px;
+                height: 48px;
+                border: 5px solid var(--gray-200);
+                border-bottom-color: var(--primary);
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .loading-text {
+                font-size: 1.1rem;
+                color: var(--gray-700);
+                text-align: center;
+            }
+
+            /* Toast Notification */
+            .toast {
+                visibility: hidden;
+                min-width: 260px;
+                background-color: #323232;
+                color: #fff;
+                text-align: center;
+                border-radius: 6px;
+                padding: 16px 24px;
+                position: fixed;
+                z-index: 9999;
+                left: 50%;
+                bottom: 48px;
+                font-size: 1rem;
+                transform: translateX(-50%);
+                opacity: 0;
+                transition: opacity 0.3s, bottom 0.3s;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            }
+            .toast.show {
+                visibility: visible;
+                opacity: 1;
+                bottom: 72px;
+            }
+
+            /* Results Section */
+            .results {
+                display: none;
+                margin-top: 2rem;
+            }
+
+            .results-title {
+                font-size: 1.4rem;
+                font-weight: 600;
+                color: var(--gray-800);
+                margin-bottom: 1.5rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .categories-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .category {
+                background-color: white;
+                border-radius: var(--border-radius);
+                box-shadow: var(--shadow-sm);
+                overflow: hidden;
+                border: 1px solid var(--gray-200);
+                transition: var(--transition);
+            }
+
+            .category:hover {
+                box-shadow: var(--shadow-md);
+                transform: translateY(-2px);
+            }
+
+            .category-header {
+                padding: 1rem 1.5rem;
+                background-color: var(--gray-100);
+                border-bottom: 1px solid var(--gray-200);
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .category-icon {
+                width: 24px;
+                height: 24px;
+                color: var(--primary);
+            }
+
+            .category-title {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--gray-800);
+            }
+
+            .category-count {
+                margin-left: auto;
+                background-color: var(--primary);
+                color: white;
+                font-size: 0.8rem;
+                font-weight: 600;
+                padding: 0.25rem 0.5rem;
+                border-radius: 12px;
+            }
+
+            .file-list {
+                list-style-type: none;
+                max-height: 250px;
+                overflow-y: auto;
+            }
+
+            .file-list li {
+                padding: 0.75rem 1.5rem;
+                border-bottom: 1px solid var(--gray-200);
+                font-size: 0.9rem;
+                color: var(--gray-700);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .file-list li:last-child {
+                border-bottom: none;
+            }
+
+            .file-list li:hover {
+                background-color: var(--gray-100);
+            }
+
+            /* Footer */
+            .footer {
+                background-color: white;
+                padding: 1.5rem;
+                text-align: center;
+                border-top: 1px solid var(--gray-200);
+                margin-top: auto;
+                color: var(--gray-600);
+                font-size: 0.95rem;
+            }
+
+            .footer-link {
+                color: var(--primary);
+                text-decoration: none;
+                font-weight: 600;
+                transition: color 0.2s;
+            }
+
+            .footer-link:hover {
+                color: var(--primary-dark);
+                text-decoration: underline;
+            }
+
+            /* Responsive Design */
+            @media (max-width: 1024px) {
+                .main-content {
+                    padding: 1.5rem;
+                    gap: 1.5rem;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .header {
+                    padding: 1rem;
+                    flex-wrap: wrap;
+                }
+
+                .app-title {
+                    font-size: 1.3rem;
+                    margin-left: 0;
+                    width: 100%;
+                    margin-top: 0.5rem;
+                }
+
+                .main-content {
+                    flex-direction: column;
+                    padding: 1rem;
+                    gap: 1rem;
+                }
+
+                .card {
+                    padding: 1.5rem;
+                }
+
+                .section-title {
+                    font-size: 1.2rem;
+                }
+
+                .categories-container {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .header {
+                    padding: 0.75rem;
+                }
+
+                .logo {
+                    height: 32px;
+                }
+
+                .brand-name {
+                    font-size: 1rem;
+                }
+
+                .app-title {
+                    font-size: 1.1rem;
+                }
+
+                .card {
+                    padding: 1rem;
+                }
+
+                .section-title {
+                    font-size: 1.1rem;
+                }
+
+                .upload-container {
+                    padding: 1.5rem 1rem;
+                }
+
+                .upload-icon {
+                    width: 48px;
+                    height: 48px;
+                }
+
+                .upload-title {
+                    font-size: 1.1rem;
+                }
+
+                .restriction-item {
+                    gap: 0.5rem;
+                }
+
+                .restriction-icon {
+                    width: 32px;
+                    height: 32px;
+                }
+
+                .restriction-icon svg {
+                    width: 16px;
+                    height: 16px;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <header class="header">
+            <div class="logo-container">
+                <a href="https://altersquare.io" target="_blank" rel="noopener">
+                    <img src="assets/combination blue+dark blue.png" alt="Logo" class="logo" style="height: 40px; width: auto; display: inline-block; vertical-align: middle;" />
+                </a>
+            </div>
+            <h1 class="app-title">AI File Categorization</h1>
+        </header>
+
+        <main class="main-content">
+            <section class="card info-section">
+                <h2 class="section-title">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    How It Works & Restrictions
+                </h2>
+                <ul class="restriction-list">
+                    <li class="restriction-item">
+                        <div class="restriction-icon">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path
+                                    d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                                ></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </div>
+                        <div class="restriction-text">
+                            File size cannot be larger than
+                            <strong>50MB</strong>.
+                        </div>
+                    </li>
+                    <li class="restriction-item">
+                        <div class="restriction-icon">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path
+                                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                ></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="restriction-text">
+                            The files are <strong>not stored anywhere</strong>;
+                            we just process, zip, and share the output.
+                        </div>
+                    </li>
+                    <li class="restriction-item">
+                        <div class="restriction-icon">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path
+                                    d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <div class="restriction-text">
+                            <strong>No more than 3 level folders</strong> are
+                            allowed.
+                        </div>
+                    </li>
+                    <li class="restriction-item">
+                        <div class="restriction-icon">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path
+                                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                                ></path>
+                                <polyline
+                                    points="3.27 6.96 12 12.01 20.73 6.96"
+                                ></polyline>
+                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                            </svg>
+                        </div>
+                        <div class="restriction-text">
+                            <strong>No zip file</strong> allowed inside the zip
+                            file.
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="card upload-section">
+                <h2 class="section-title">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                        ></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Upload & Categorize
+                </h2>
+
+                <div id="uploadContainer" class="upload-container">
+                    <svg
+                        class="upload-icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                        ></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <h3 class="upload-title">
+                        Upload a ZIP file to categorize
+                    </h3>
+                    <p class="upload-subtitle">
+                        Click to browse or drag and drop your file here
+                    </p>
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <input
+                            type="file"
+                            id="zipFile"
+                            name="zipFile"
+                            accept=".zip"
+                            class="file-input"
+                            required
+                        />
+                    </form>
+                </div>
+
+                <div id="selectedFile" class="selected-file">
+                    <div class="file-info">
+                        <svg
+                            class="file-icon"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            ></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span id="fileName" class="file-name">file.zip</span>
+                        <span id="fileSize" class="file-size">0 KB</span>
+                    </div>
+                </div>
+
+                <button id="submitBtn" class="submit-btn" disabled>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"
+                        ></path>
+                        <polyline points="16 5 21 5 21 10"></polyline>
+                        <line x1="21" y1="5" x2="14" y2="12"></line>
+                    </svg>
+                    Upload & Categorize
+                </button>
+
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p class="loading-text">
+                        Processing your files...<br />This may take a moment.
+                    </p>
+                </div>
+
+                <div id="toast" class="toast"></div>
+
+                <div id="results" class="results">
+                    <h2 class="results-title">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <polyline
+                                points="22 12 18 12 15 21 9 3 6 12 2 12"
+                            ></polyline>
+                        </svg>
+                        Categorization Results
+                    </h2>
+                    <div id="categories" class="categories-container"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <span
+                >&copy; <span id="year"></span> Property of
+                <a
+                    href="https://altersquare.io"
+                    target="_blank"
+                    rel="noopener"
+                    class="footer-link"
+                    >AlterSquare</a
+                ></span
+            >
+        </footer>
+
+        <script>
+            // Set current year in footer
+            document.getElementById("year").textContent =
+                new Date().getFullYear();
+
+            // File upload handling
+            const uploadForm = document.getElementById("uploadForm");
+            const uploadContainer = document.getElementById("uploadContainer");
+            const selectedFileDiv = document.getElementById("selectedFile");
+            const fileNameSpan = document.getElementById("fileName");
+            const fileSizeSpan = document.getElementById("fileSize");
+            const submitBtn = document.getElementById("submitBtn");
+            const loadingDiv = document.getElementById("loading");
+            const resultsDiv = document.getElementById("results");
+            const categoriesDiv = document.getElementById("categories");
+            const toast = document.getElementById("toast");
+            const fileInput = document.getElementById("zipFile");
+
+            // Format file size
+            function formatFileSize(bytes) {
+                if (bytes === 0) return "0 Bytes";
+                const k = 1024;
+                const sizes = ["Bytes", "KB", "MB", "GB"];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return (
+                    parseFloat((bytes / Math.pow(k, i)).toFixed(2)) +
+                    " " +
+                    sizes[i]
+                );
+            }
+
+            // Handle file selection
+            uploadContainer.addEventListener("click", () => {
+                fileInput.click();
             });
 
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || "Error uploading file");
-            }
-
-            const data = await response.json();
-            console.log("Upload response:", data);
-
-            if (data.success) {
-              await fetchResults(data.sessionId);
-            } else {
-              throw new Error(data.message || "Unknown error occurred");
-            }
-          } catch (error) {
-            console.error("Error:", error);
-            showError(error.message || "An unexpected error occurred");
-          } finally {
-            loadingDiv.style.display = "none";
-          }
-        });
-
-        async function fetchResults(sessionId) {
-          try {
-            const response = await fetch(`/results/${sessionId}`);
-
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || "Error fetching results");
-            }
-
-            const data = await response.json();
-            displayResults(data);
-          } catch (error) {
-            console.error("Error fetching results:", error);
-            showError(
-              error.message || "Failed to retrieve categorization results"
+            // Drag and drop functionality
+            ["dragenter", "dragover", "dragleave", "drop"].forEach(
+                (eventName) => {
+                    uploadContainer.addEventListener(
+                        eventName,
+                        preventDefaults,
+                        false
+                    );
+                }
             );
-          }
-        }
 
-        function displayResults(categories) {
-          categoriesDiv.innerHTML = "";
-
-          if (Object.keys(categories).length === 0) {
-            categoriesDiv.innerHTML = "<p>No categorized files found.</p>";
-          } else {
-            for (const category in categories) {
-              const files = categories[category];
-
-              const categoryDiv = document.createElement("div");
-              categoryDiv.className = "category";
-
-              const categoryTitle = document.createElement("div");
-              categoryTitle.className = "category-title";
-              categoryTitle.textContent = category + ` (${files.length} files)`;
-              categoryDiv.appendChild(categoryTitle);
-
-              const fileList = document.createElement("ul");
-              fileList.className = "file-list";
-
-              files.forEach((file) => {
-                const fileItem = document.createElement("li");
-                fileItem.textContent = file;
-                fileList.appendChild(fileItem);
-              });
-
-              categoryDiv.appendChild(fileList);
-              categoriesDiv.appendChild(categoryDiv);
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
             }
-          }
 
-          resultsDiv.style.display = "block";
-        }
+            ["dragenter", "dragover"].forEach((eventName) => {
+                uploadContainer.addEventListener(eventName, highlight, false);
+            });
 
-        function showError(message) {
-          errorDiv.textContent = message;
-          errorDiv.style.display = "block";
-          loadingDiv.style.display = "none";
-        }
-      });
-    </script>
-  </body>
+            ["dragleave", "drop"].forEach((eventName) => {
+                uploadContainer.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                uploadContainer.style.borderColor = "var(--primary)";
+                uploadContainer.style.backgroundColor =
+                    "rgba(67, 97, 238, 0.05)";
+            }
+
+            function unhighlight() {
+                uploadContainer.style.borderColor = "var(--gray-300)";
+                uploadContainer.style.backgroundColor = "var(--gray-100)";
+            }
+
+            uploadContainer.addEventListener("drop", handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                fileInput.files = files;
+                handleFileChange();
+            }
+
+            // File change handler
+            fileInput.addEventListener("change", handleFileChange);
+
+            function handleFileChange() {
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+
+                    if (
+                        file.type !== "application/zip" &&
+                        !file.name.endsWith(".zip")
+                    ) {
+                        showToast("Please upload a valid ZIP file");
+                        resetFileInput();
+                        return;
+                    }
+
+                    if (file.size > 50 * 1024 * 1024) {
+                        // 50MB
+                        showToast("File size cannot exceed 50MB");
+                        resetFileInput();
+                        return;
+                    }
+
+                    fileNameSpan.textContent = file.name;
+                    fileSizeSpan.textContent = formatFileSize(file.size);
+                    selectedFileDiv.style.display = "block";
+                    submitBtn.disabled = false;
+                } else {
+                    selectedFileDiv.style.display = "none";
+                    submitBtn.disabled = true;
+                }
+            }
+
+            function resetFileInput() {
+                fileInput.value = "";
+                selectedFileDiv.style.display = "none";
+                submitBtn.disabled = true;
+            }
+
+            // Form submission
+            submitBtn.addEventListener("click", async function (e) {
+                e.preventDefault();
+
+                if (!fileInput.files[0]) {
+                    showToast("Please select a ZIP file to upload");
+                    return;
+                }
+
+                // Show loading indicator
+                loadingDiv.style.display = "flex";
+                uploadContainer.style.display = "none";
+                selectedFileDiv.style.display = "none";
+                submitBtn.style.display = "none";
+                resultsDiv.style.display = "none";
+
+                const formData = new FormData(uploadForm);
+
+                try {
+                    const response = await fetch("/upload", {
+                        method: "POST",
+                        body: formData,
+                    });
+
+                    // Check if the response is a zip file (file download)
+                    const contentType = response.headers.get("content-type");
+                    const disposition = response.headers.get(
+                        "content-disposition"
+                    );
+
+                    if (
+                        response.ok &&
+                        contentType &&
+                        contentType.includes("application/zip")
+                    ) {
+                        // Try to get filename from Content-Disposition header
+                        let filename = "categorized-result.zip";
+                        if (disposition && disposition.includes("filename=")) {
+                            filename = disposition
+                                .split("filename=")[1]
+                                .replace(/['"]/g, "")
+                                .trim();
+                        }
+
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+
+                        // Reset UI
+                        loadingDiv.style.display = "none";
+                        uploadContainer.style.display = "flex";
+                        submitBtn.style.display = "block";
+                        resetFileInput();
+
+                        return; // No need to show results, as the file is downloaded
+                    }
+
+                    // Otherwise, try to parse as JSON (error or old API)
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (err) {
+                        throw new Error(
+                            "Unexpected server response. Please try again or contact support."
+                        );
+                    }
+
+                    if (response.ok && data.success) {
+                        await fetchResults(data.sessionId);
+                    } else {
+                        throw new Error(
+                            data.error ||
+                                data.message ||
+                                "Unknown error occurred"
+                        );
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    showToast(error.message || "An unexpected error occurred");
+
+                    // Reset UI
+                    loadingDiv.style.display = "none";
+                    uploadContainer.style.display = "flex";
+                    submitBtn.style.display = "block";
+                    if (fileInput.files.length > 0) {
+                        selectedFileDiv.style.display = "block";
+                    }
+                }
+            });
+
+            async function fetchResults(sessionId) {
+                try {
+                    const response = await fetch(`/results/${sessionId}`);
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(
+                            errorData.error || "Error fetching results"
+                        );
+                    }
+
+                    const data = await response.json();
+                    displayResults(data);
+
+                    // Reset upload form for next upload
+                    uploadContainer.style.display = "flex";
+                    submitBtn.style.display = "block";
+                    resetFileInput();
+                } catch (error) {
+                    console.error("Error fetching results:", error);
+                    showToast(
+                        error.message ||
+                            "Failed to retrieve categorization results"
+                    );
+
+                    // Reset UI
+                    loadingDiv.style.display = "none";
+                    uploadContainer.style.display = "flex";
+                    submitBtn.style.display = "block";
+                    if (fileInput.files.length > 0) {
+                        selectedFileDiv.style.display = "block";
+                    }
+                }
+            }
+
+            function displayResults(categories) {
+                categoriesDiv.innerHTML = "";
+                loadingDiv.style.display = "none";
+
+                if (Object.keys(categories).length === 0) {
+                    categoriesDiv.innerHTML =
+                        "<p>No categorized files found.</p>";
+                } else {
+                    // Get icons based on category names
+                    const categoryIcons = {
+                        Documents: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
+                        Images: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
+                        Videos: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`,
+                        Audio: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>`,
+                        Code: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`,
+                        Archives: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`,
+                        Other: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`,
+                    };
+
+                    // Default icon for categories not in the list
+                    const defaultIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+
+                    for (const category in categories) {
+                        const files = categories[category];
+                        const categoryDiv = document.createElement("div");
+                        categoryDiv.className = "category";
+
+                        // Get the appropriate icon or use default
+                        const icon = categoryIcons[category] || defaultIcon;
+
+                        const categoryHeader = document.createElement("div");
+                        categoryHeader.className = "category-header";
+                        categoryHeader.innerHTML = `
+                        <div class="category-icon">${icon}</div>
+                        <div class="category-title">${category}</div>
+                        <div class="category-count">${files.length}</div>
+                    `;
+                        categoryDiv.appendChild(categoryHeader);
+
+                        const fileList = document.createElement("ul");
+                        fileList.className = "file-list";
+
+                        files.forEach((file) => {
+                            const fileItem = document.createElement("li");
+                            fileItem.textContent = file;
+                            fileList.appendChild(fileItem);
+                        });
+
+                        categoryDiv.appendChild(fileList);
+                        categoriesDiv.appendChild(categoryDiv);
+                    }
+                }
+
+                resultsDiv.style.display = "block";
+            }
+
+            function showToast(message) {
+                toast.textContent = message;
+                toast.className = "toast show";
+                setTimeout(() => {
+                    toast.className = "toast";
+                }, 3500);
+            }
+        </script>
+    </body>
 </html>

@@ -1,5 +1,9 @@
+require('dotenv').config();
 const multer = require("multer");
 const fs = require("fs-extra");
+
+const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB, 10) || 10;
+const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -23,9 +27,11 @@ const upload = multer({
             cb(new Error("Only zip files are allowed"), false);
         }
     },
-    limits: { fileSize: 10 * 1024 * 1024 },
+    limits: { fileSize: MAX_FILE_SIZE },
 });
 
 fs.ensureDirSync("uploads");
 
 module.exports = upload;
+module.exports.MAX_FILE_SIZE = MAX_FILE_SIZE;
+module.exports.MAX_FILE_SIZE_MB = MAX_FILE_SIZE_MB;
